@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FloodGuard AI V4 — IEM IDEAS 2026</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+ --bg:#0B1420;--panel:#111C2C;--panel2:#0E1826;--line:#22334A;--hi:#E9F1F8;--mid:#A9BBCF;--low:#63768D;
+ --accent:#2DD4BF;--normal:#3FA34D;--alert:#D9A404;--warning:#E0762E;--danger:#D6392C;--blue:#4C9BE0;--purple:#9B8CF2
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}body{background:radial-gradient(1200px 800px at 15% -10%,#0F2036 0%,var(--bg) 55%);color:var(--hi);font-family:"IBM Plex Sans",sans-serif;min-height:100vh}
+button,input,select{font:inherit}.mono{font-family:"IBM Plex Mono",monospace}a{color:var(--accent)}
+.navbar{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 20px;border-bottom:1px solid var(--line);background:rgba(11,20,32,.94);backdrop-filter:blur(8px)}
+.brand{display:flex;align-items:center;gap:10px}.mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#1a7f77);display:grid;place-items:center;color:#062622;font-weight:700}.bname{font-weight:700;font-size:14px}.bsub{font-size:9.5px;color:var(--low);letter-spacing:1px;text-transform:uppercase}
+.tabs{display:flex;gap:4px;background:var(--panel2);padding:4px;border:1px solid var(--line);border-radius:8px;flex-wrap:wrap}.tab{border:0;background:transparent;color:var(--mid);font-size:11.5px;padding:8px 11px;border-radius:6px;cursor:pointer}.tab.active{background:var(--accent);color:#062622;font-weight:700}.tab:hover{color:var(--hi)}
+.right{display:flex;align-items:center;gap:8px}.badge{font-size:9px;letter-spacing:.7px;text-transform:uppercase;border:1px solid var(--line);padding:5px 7px;border-radius:5px;color:var(--mid)}.clock{font-size:11px;color:var(--mid)}
+.section{display:none}.section.active{display:block}.wrap{max-width:1180px;margin:auto;padding:42px 22px 62px}.narrow{max-width:820px;margin:auto;padding:52px 22px 68px}
+.eyebrow,.label{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700}.eyebrow{color:var(--accent);margin-bottom:10px}.label{color:var(--low);margin:0 0 10px}.h1{font-size:40px;line-height:1.1;margin:0 0 14px}.h2{font-size:25px;margin:0 0 9px}.h3{font-size:16px;margin:0 0 7px}.lede{font-size:15px;line-height:1.65;color:var(--mid)}.small{font-size:11.5px;line-height:1.5;color:var(--low)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:17px}.soft{background:var(--panel2)}.card p{font-size:12.5px;color:var(--mid);line-height:1.55;margin:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.btn{border:0;border-radius:8px;background:var(--accent);color:#062622;font-weight:700;font-size:12.5px;padding:10px 15px;cursor:pointer}.btn.secondary{background:var(--panel2);color:var(--hi);border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}.field{background:var(--panel2);border:1px solid var(--line);color:var(--hi);border-radius:8px;padding:9px 10px}.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:16px 0}
+.status{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:12px 14px;font-size:12px;color:var(--mid);line-height:1.5}.status strong{color:var(--hi)}.status.good{border-color:#275D48}.status.warn{border-color:#6D5A22}.status.bad{border-color:#743631}
+.tag{display:inline-block;font-size:9px;letter-spacing:.7px;text-transform:uppercase;padding:4px 7px;border-radius:12px;border:1px solid var(--line);color:var(--mid)}.tag.official{color:#8AD7FF;border-color:#2C5975;background:#11283A}.tag.derived{color:#F1D879;border-color:#5B5130;background:#292611}.tag.ml{color:#C7B4FF;border-color:#4F4772;background:#211E34}.tag.snapshot{color:#FFB88D;border-color:#6E4328;background:#2B1D14}
+.obj{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.num{font-family:"IBM Plex Mono";color:var(--accent);font-size:12px;margin-bottom:7px}.statstrip{display:flex;gap:20px;flex-wrap:wrap;margin-top:30px;padding-top:24px;border-top:1px solid var(--line)}.statstrip>div{flex:1;min-width:150px}.big{font-family:"IBM Plex Mono";font-size:25px;color:var(--accent);font-weight:700}
+.mapgrid{display:grid;grid-template-columns:1.45fr .85fr;gap:14px}.mapbox{height:500px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}#map{height:100%;width:100%}.leaflet-container{background:var(--panel2)}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--hi)}
+.scroll{max-height:500px;overflow:auto}.state-row,.station-row{display:grid;grid-template-columns:12px 1fr auto;gap:9px;align-items:center;padding:10px 6px;border-bottom:1px solid var(--line);cursor:pointer}.state-row:hover,.station-row:hover{background:var(--panel2)}.dot{width:9px;height:9px;border-radius:50%}.name{font-size:12px;font-weight:700}.meta{font-size:10px;color:var(--low);margin-top:2px}.chip{font-size:9px;font-weight:700;padding:4px 6px;border-radius:12px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}.kpi .k{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--low)}.kpi .v{font-size:17px;font-weight:700;margin-top:5px}.kpi .s{font-size:9.5px;color:var(--low);margin-top:3px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:11.5px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:9px;color:var(--low);text-transform:uppercase;letter-spacing:.7px;background:var(--panel2)}tbody tr:last-child td{border-bottom:0}
+.threshold{height:17px;border-radius:10px;background:linear-gradient(90deg,var(--normal) 0 33%,var(--alert) 33% 55%,var(--warning) 55% 77%,var(--danger) 77% 100%);position:relative;margin:15px 0 6px}.marker{position:absolute;top:-5px;width:3px;height:27px;background:#fff;transform:translateX(-50%)}.thlabels{display:flex;justify-content:space-between;font-size:9px;color:var(--low)}
+.list{list-style:none;margin:0;padding:0}.list li{font-size:12px;color:var(--mid);padding:8px 0;border-bottom:1px solid var(--line)}.list li:last-child{border:0}.list b{color:var(--hi)}
+.coverage{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.cov{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:11px}.cov .cv{font-size:18px;font-family:"IBM Plex Mono";font-weight:700}.cov .cl{font-size:9px;color:var(--low);text-transform:uppercase;letter-spacing:.7px}.cov .cs{font-size:9px;color:var(--low);margin-top:3px}
+.rain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rain{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:12px}.rain .rv{font-size:20px;font-weight:700;margin:5px 0}.rain .rn{font-size:11.5px;font-weight:700}.rain .rm{font-size:9.5px;color:var(--low);margin-top:3px}
+.mlgrid{display:grid;grid-template-columns:.8fr 1.2fr;gap:14px}.upload{border:1px dashed #38516B;background:var(--panel2);border-radius:10px;padding:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.metric{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px}.metric .m{font-family:"IBM Plex Mono";font-size:17px;font-weight:700}.metric .l{font-size:9px;color:var(--low);text-transform:uppercase;margin-bottom:4px}
+.code{font-family:"IBM Plex Mono";font-size:10px;color:#B7C7D8;background:#08111C;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto}
+.sourcegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.url{word-break:break-all;font-size:10px;color:var(--accent)}
+.pipeline{display:flex;align-items:center;flex-wrap:wrap}.pipe{flex:1;min-width:120px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:12px;text-align:center;font-size:11.5px}.arrow{padding:0 6px;color:var(--low)}
+.footer{text-align:center;padding:16px 20px;border-top:1px solid var(--line);font-size:10px;color:var(--low)}
+
+.detail-stations{margin-top:16px}
+.station-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.station-table{width:100%;border-collapse:collapse;font-size:11px}
+.station-table th,.station-table td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.station-table th{background:var(--panel2);color:var(--low);font-size:9px;text-transform:uppercase;letter-spacing:.7px}
+.station-table tbody tr{cursor:pointer}
+.station-table tbody tr:hover{background:var(--panel2)}
+.station-table tbody tr:last-child td{border-bottom:0}
+.station-empty{padding:14px;color:var(--mid);font-size:12px;line-height:1.5}
+
+
+.callout{border:1px solid #2B4A5A;background:#0D2030;border-radius:10px;padding:14px 16px;font-size:12.5px;color:var(--mid);line-height:1.55}
+.callout b{color:var(--hi)}
+.formula{font-family:"IBM Plex Mono";font-size:11px;background:#08111C;border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:#C8D5E3;line-height:1.6;overflow:auto}
+.preview-table{margin-top:10px;max-height:250px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.preview-table table{font-size:10.5px}
+.preview-table th,.preview-table td{padding:8px 9px}
+.meaning{border-left:3px solid var(--accent);padding:11px 13px;background:var(--panel2);border-radius:7px;font-size:12px;color:var(--mid);line-height:1.55}
+.meaning b{color:var(--hi)}
+
+
+.hero-summary{border:1px solid #2C5A66;background:linear-gradient(135deg,#0D2030,#10273A);border-radius:11px;padding:16px 18px;margin-top:14px}
+.hero-summary .hero-main{font-size:20px;font-weight:700;line-height:1.35;color:var(--hi)}
+.hero-summary .hero-sub{font-size:12px;color:var(--mid);margin-top:6px;line-height:1.55}
+.simple-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.simple-card{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:13px}
+.simple-card .title{font-size:9px;color:var(--low);text-transform:uppercase;letter-spacing:.8px}
+.simple-card .value{font-size:19px;font-weight:700;margin-top:5px}
+.simple-card .desc{font-size:9.5px;color:var(--low);margin-top:3px;line-height:1.4}
+details.tech{margin-top:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}
+details.tech summary{cursor:pointer;padding:11px 13px;font-weight:700;font-size:12px;color:var(--hi)}
+details.tech[open] summary{border-bottom:1px solid var(--line)}
+details.tech .tech-body{padding:12px 13px}
+.map-key{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:10px;color:var(--mid)}
+.map-key span{display:inline-flex;align-items:center;gap:5px}.map-key i{display:inline-block;width:9px;height:9px;border-radius:50%}
+.rain-headline{font-size:17px;font-weight:700;color:var(--hi);margin:5px 0}
+.rain-zero{color:var(--mid);font-size:12px;line-height:1.45}
+
+/* V4 responder + Telegram workflow */
+.workflow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:16px 0}.wf{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:11px;text-align:center;font-size:10.5px;color:var(--mid)}.wf.done{border-color:#275D48;color:#A8E6CB}.wf.active{border-color:#6D5A22;color:#F5D987}.incident-card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:15px;margin-top:12px}.incident-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.incident-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.textarea{width:100%;min-height:72px;resize:vertical}.checkrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mid);margin-top:8px}.pill{font-size:9px;padding:4px 7px;border:1px solid var(--line);border-radius:12px;color:var(--mid)}.audit{font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.6;background:#08111C;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto}.subbox{display:grid;grid-template-columns:1fr 1fr;gap:14px}.step-note{font-size:11px;color:var(--low);line-height:1.5}.danger-btn{background:var(--danger);color:white}.ok-btn{background:var(--normal);color:white}.telegram-link{display:inline-flex;align-items:center;gap:6px;text-decoration:none}.readonly{opacity:.78}
+@media(max-width:960px){.workflow{grid-template-columns:repeat(3,1fr)}.subbox{grid-template-columns:1fr}}
+@media(max-width:620px){.workflow{grid-template-columns:1fr 1fr}}
+@media(max-width:960px){.simple-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.simple-grid{grid-template-columns:1fr}}
+@media(max-width:960px){.tabs{order:3;width:100%;justify-content:center}.mapgrid,.mlgrid,.grid2{grid-template-columns:1fr}.grid3,.obj,.rain-grid,.coverage{grid-template-columns:1fr 1fr}.grid4,.metrics{grid-template-columns:1fr 1fr}.mapbox{height:400px}}
+@media(max-width:620px){.grid3,.obj,.rain-grid,.coverage,.grid4,.metrics{grid-template-columns:1fr}.h1{font-size:33px}.wrap,.narrow{padding-left:14px;padding-right:14px}}
+</style>
+</head>
+<body>
+<div class="navbar">
+ <div class="brand"><div class="mark">FG</div><div><div class="bname">FloodGuard AI</div><div class="bsub">IEM IDEAS 2026 · V4</div></div></div>
+ <div class="tabs">
+  <button class="tab active" data-id="overview" onclick="show('overview')">Overview</button>
+  <button class="tab" data-id="nationwide" onclick="show('nationwide')">Malaysia Flood Monitor</button>
+  <button class="tab" data-id="station" onclick="show('station')">Station Explorer</button>
+  <button class="tab" data-id="forecast" onclick="show('forecast')">Future Water-Level Forecast</button>
+  <button class="tab" data-id="rainfall" onclick="show('rainfall')">Rainfall & Catchment</button>
+  <button class="tab" data-id="response" onclick="show('response')">Response & Alerts</button>
+  <button class="tab" data-id="method" onclick="show('method')">How FloodGuard Decides</button>
+  <button class="tab" data-id="sources" onclick="show('sources')">Sources</button>
+  <button class="tab" data-id="legend" onclick="show('legend')">Legend</button>
+ </div>
+ <div class="right"><span id="modeBadge" class="badge">NETWORK: CHECKING</span><span id="clock" class="clock mono">--:--:--</span></div>
+</div>
+
+<section id="s-overview" class="section active"><div class="narrow">
+ <div class="eyebrow">Transparent Flood Decision Support</div><h1 class="h1">FloodGuard AI</h1>
+ <p class="lede">A Malaysia-focused flood decision-support prototype that combines official monitoring, local sensing, CCTV verification, short-horizon forecasting and a human responder approval workflow before public alerts are released.</p>
+ <div class="status" style="margin-top:22px"><strong>V4 rule:</strong> FloodGuard never sends a public warning directly from AI output. A possible flood must be reviewed by responders, team/resources must be arranged, response readiness confirmed, and only then can an authorised public Telegram alert be released. Live retrieval retains labelled official snapshot fallback behaviour.</div>
+ <div class="obj">
+  <div class="card"><div class="num">01</div><h3 class="h3">Nationwide coverage</h3><p>All Malaysian states show official JPS network availability, even if detailed live retrieval is temporarily unavailable.</p></div>
+  <div class="card"><div class="num">02</div><h3 class="h3">Station-specific thresholds</h3><p>Normal / Alert / Warning / Danger are based on each station's own JPS thresholds — never one universal water level.</p></div>
+  <div class="card"><div class="num">03</div><h3 class="h3">Real validation</h3><p>The ML module can immediately run on a bundled verified JPS historical series and compares regression against a naive persistence baseline.</p></div>
+ </div>
+ <div class="statstrip"><div><div class="big">16</div><div class="small">states / federal territories in the nationwide view</div></div><div><div class="big">4</div><div class="small">official JPS stage classes</div></div><div><div class="big">3</div><div class="small">evidence labels: Official / Derived / ML</div></div></div>
+ <div class="controls" style="margin-top:25px"><button class="btn" onclick="show('nationwide')">Open nationwide view →</button><button class="btn secondary" onclick="show('forecast');loadVerifiedExample()">Run verified ML example</button></div>
+</div></section>
+
+<section id="s-nationwide" class="section"><div class="wrap">
+ <div class="label">Malaysia Flood Monitor</div><h2 class="h2">Choose a state to see official monitoring coverage and river-station status</h2>
+ <p class="lede">Blue or grey markers mean FloodGuard only knows the monitoring-network status. Green / yellow / orange / red are used only when actual station readings and thresholds are loaded for that state.</p>
+ <div class="map-key">
+<span><i style="background:#4C9BE0"></i> network available / stage not loaded</span>
+<span><i style="background:#3FA34D"></i> Normal</span>
+<span><i style="background:#D9A404"></i> Alert</span>
+<span><i style="background:#E0762E"></i> Warning</span>
+<span><i style="background:#D6392C"></i> Danger</span>
+<span><i style="background:#63768D"></i> unavailable</span>
+</div>
+<div id="stateHero" class="hero-summary"><div class="hero-main">Select a state to begin.</div><div class="hero-sub">FloodGuard separates monitoring-network availability from actual river-stage information.</div></div>
+<div class="controls"><select id="stateSelect" class="field"></select><button id="loadStateBtn" class="btn" onclick="loadSelectedState()">Load selected state</button><button class="btn secondary" onclick="loadNationwideStatus()">Refresh nationwide status</button><a id="officialWaterLink" class="btn secondary" target="_blank" rel="noopener">Open official JPS ↗</a></div>
+ <div id="nationStatus" class="status">Checking nationwide JPS status…</div>
+ <div class="mapgrid" style="margin-top:14px">
+  <div class="mapbox"><div id="map"></div></div>
+  <div class="card scroll"><div class="label">States</div><div id="stateList"></div></div>
+ </div>
+ <div id="selectedCoverage" class="coverage" style="margin-top:14px"></div>
+ <div class="grid3" style="margin-top:14px">
+  <div class="card"><span class="tag official">Official / Snapshot</span><h3 class="h3" style="margin-top:8px">Detailed stations loaded</h3><div id="stationCount" class="big">0</div><p>Water-level station rows actually retrieved or verified in the bundled snapshot.</p></div>
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:8px">Highest JPS stage</h3><div id="highestStage" class="big">—</div><p id="highestSub">Load a state to classify station-specific thresholds.</p></div>
+  <div class="card"><span class="tag derived">Derived</span><h3 class="h3" style="margin-top:8px">Near Danger</h3><div id="nearDanger" class="big">—</div><p>Stations within the final 20% of their Normal→Danger threshold band.</p></div>
+ </div>
+
+ <div class="detail-stations">
+   <div class="label">Detailed water-level stations</div>
+   <div class="station-table-wrap">
+     <div id="nationStationList" class="station-empty">
+       Select a state and load detailed station data. When rows are available, current JPS water-level reading and the station-specific Alert / Warning / Danger thresholds will appear here.
+     </div>
+   </div>
+ </div>
+</div></section>
+
+<section id="s-station" class="section"><div class="wrap">
+ <div class="label">Station Explorer</div><h2 class="h2">What is happening at this river station right now?</h2>
+ <p class="lede">Select one station to see its official JPS water-level reading, station thresholds, exact distance to each threshold and a simple explanation of the current stage. The value is a station gauge/stage level in metres — it is not the physical depth of the river.</p>
+ <div class="callout" style="margin-top:14px"><b>Important unit note:</b> Public Infobanjir labels this field <b>Water Level (m)</b>. Values such as 50 m or 100 m should not be read as “the river is 50 m deep”. They are station-referenced stage/gauge values. FloodGuard therefore compares readings only with thresholds from the <b>same station</b>. The public table does not expose enough datum metadata for FloodGuard to claim “metres above sea level”.</div>
+ <div id="stationHero" class="hero-summary"><div class="hero-main">Load a station to see the current stage and exact distance to the next official threshold.</div><div class="hero-sub">The main result is shown first; calculations stay underneath.</div></div>
+<div class="controls"><select id="stationSelect" class="field" onchange="selectStation(this.value)"><option value="">Load a state first</option></select><button class="btn secondary" onclick="useVerifiedStationExample()">Load verified station example</button></div>
+ <div id="stationDetail" class="status">No station selected. Load a state, or use the verified example.</div>
+</div></section>
+
+<section id="s-forecast" class="section"><div class="wrap">
+ <div class="label">Future Water-Level Forecast</div><h2 class="h2">What could this river station read 15–60 minutes from now?</h2>
+ <p class="lede">The model predicts one thing only: the future JPS water-level reading for the selected station. FloodGuard then translates that number into an expected stage using the station's own official thresholds.</p>
+ <div class="callout" style="margin-top:16px"><b>Simple flow:</b> historical water levels → calculate recent rate of rise → train model → predict future water level → compare with official JPS thresholds. Rainfall is used only when the historical dataset actually contains usable rainfall values.</div>
+ <div class="mlgrid" style="margin-top:18px">
+  <div class="upload">
+   <h3 class="h3">1. Historical data used to learn the pattern</h3><p class="small">Required CSV columns: <span class="mono">station_id,timestamp,water_level</span>. Optional: <span class="mono">station_name,state,rainfall,alert,warning,danger</span>.</p>
+   <input id="csvFile" type="file" class="field" accept=".csv,text/csv" style="width:100%;margin-top:9px" onchange="handleCSV(event)">
+   <div class="controls"><button class="btn secondary" onclick="downloadTemplate()">CSV template</button><button class="btn secondary" onclick="loadVerifiedExample()">Load verified JPS-KL example</button></div>
+   <div id="csvStatus" class="status">No dataset loaded yet.</div>
+   <div id="historyPreview" class="preview-table" style="display:none"></div>
+   <div style="margin-top:18px"><label class="small">2. Station to forecast</label><select id="mlStation" class="field" style="width:100%;margin-top:5px"><option value="">Load data first</option></select></div>
+   <div style="margin-top:10px"><label class="small">3. How far ahead?</label><select id="horizon" class="field" style="width:100%;margin-top:5px"><option value="15">+15 min</option><option value="30">+30 min</option><option value="60" selected>+60 min</option></select></div>
+   <div class="controls"><button class="btn" onclick="trainModel()">Predict & validate</button><button id="forecastDownloadBtn" class="btn secondary" onclick="downloadForecastReport()" disabled>Download forecast report</button></div>
+  </div>
+  <div class="card"><div class="label">Forecast result</div><div id="modelResult"><div class="small">Load the verified example for an immediate end-to-end demonstration.</div></div></div>
+ </div>
+
+ <div class="card" style="margin-top:16px"><div class="label">Derived screening projection — not ML</div><h3 class="h3">Two-observation rate-of-rise calculator</h3>
+  <p class="small">Useful when only two recent readings are available. This is a transparent linear screening estimate, not an AI forecast.</p>
+  <div class="grid4" style="margin-top:12px">
+   <div><label class="small">Previous level (m)</label><input id="qPrev" class="field" type="number" step=".01" value="2.10" style="width:100%"></div>
+   <div><label class="small">Current level (m)</label><input id="qCurr" class="field" type="number" step=".01" value="2.22" style="width:100%"></div>
+   <div><label class="small">Minutes apart</label><input id="qMin" class="field" type="number" step="1" value="15" style="width:100%"></div>
+   <div><label class="small">Danger threshold (m)</label><input id="qDanger" class="field" type="number" step=".01" value="3.10" style="width:100%"></div>
+  </div>
+  <div class="controls"><button class="btn secondary" onclick="quickProjection()">Calculate screening estimate</button></div><div id="quickResult" class="status">Enter two observations and calculate.</div>
+ </div>
+</div></section>
+
+<section id="s-rainfall" class="section"><div class="wrap">
+ <div class="label">Rainfall Context</div><h2 class="h2">How much rain is falling, and why does FloodGuard care?</h2>
+ <p class="lede">Rainfall is supporting context, not the official flood stage. It helps explain whether extra water is entering the catchment and may later contribute to a rising river.</p>
+ <div class="callout" style="margin-top:15px"><b>FloodGuard use:</b> show recent 1-hour rainfall → classify intensity using JPS bands → review recent rainfall history → combine rainfall with river-level history when a historical ML dataset contains rainfall. The live rainfall page is kept separate from the river station unless a defensible spatial/time match is available.</div>
+ <div class="controls"><select id="rainStateSelect" class="field"></select><button class="btn" onclick="loadRainState()">Load rainfall detail</button><button class="btn secondary" onclick="loadVerifiedRainExample()">Load verified rainfall example</button><button id="rainExportBtn" class="btn secondary" onclick="exportRainCSV()" disabled>Export rainfall CSV</button><a id="officialRainLink" class="btn secondary" target="_blank" rel="noopener">Open official rainfall ↗</a></div>
+ <div id="rainCoverage" class="coverage"></div>
+ <div id="rainStatus" class="status" style="margin-top:13px">Select a state.</div>
+ <div id="rainSummary" class="grid4" style="margin-top:12px"></div>
+ <div id="rainMeaning" class="meaning" style="margin-top:12px">Load detailed rainfall data or the verified example to see what the readings mean.</div>
+ <div id="rainGrid" class="rain-grid" style="margin-top:12px"></div>
+</div></section>
+
+
+<section id="s-response" class="section"><div class="wrap">
+ <div class="label">Human-in-the-loop Emergency Workflow</div><h2 class="h2">Detect → verify → allocate → approve → notify</h2>
+ <p class="lede">FloodGuard V4 follows the workflow discussed with the project advisor: JPS + local sensors + CCTV feed the decision-support layer; responders verify a possible flood, coordinate team/resources, mark response readiness, then approve public notification. AI never directly broadcasts an emergency warning.</p>
+ <div class="workflow">
+   <div class="wf">1 · Detect<br><span class="small">JPS + sensor + CCTV</span></div>
+   <div class="wf">2 · Forecast<br><span class="small">AI / threshold evidence</span></div>
+   <div class="wf">3 · Verify<br><span class="small">Responder review</span></div>
+   <div class="wf">4 · Allocate<br><span class="small">Teams & resources</span></div>
+   <div class="wf">5 · Approve<br><span class="small">Human authorisation</span></div>
+   <div class="wf">6 · Notify<br><span class="small">Telegram subscribers</span></div>
+ </div>
+ <div class="subbox">
+  <div class="card">
+   <div class="label">Create / detect incident</div><h3 class="h3">Build an incident from the selected station</h3>
+   <p class="small">For the prototype, this button converts the currently selected station and latest available forecast into a responder case. In deployment this endpoint can also be triggered automatically when threshold / forecast rules are met.</p>
+   <div class="grid2" style="margin-top:12px">
+    <div><label class="small">CCTV verification status</label><select id="incidentCctv" class="field" style="width:100%;margin-top:5px"><option value="pending">Pending</option><option value="available">Feed available</option><option value="visual_rising">Visual: water visibly rising</option><option value="visual_flooding">Visual: flooding observed</option><option value="unavailable">Unavailable</option></select></div>
+    <div><label class="small">Local sensor status</label><select id="incidentSensor" class="field" style="width:100%;margin-top:5px"><option value="available">Available</option><option value="confirming_rise">Confirming rise</option><option value="offline">Offline</option><option value="not_installed">Not installed</option></select></div>
+   </div>
+   <div style="margin-top:10px"><label class="small">Detection note</label><textarea id="incidentNote" class="field textarea" placeholder="Example: Warning stage + forecast escalation; CCTV review requested."></textarea></div>
+   <div class="incident-actions"><button class="btn" onclick="createIncidentFromCurrent()">Create responder incident</button><button class="btn secondary" onclick="loadSelangorDemoIncident()">Load Selangor demo scenario</button><button class="btn secondary" onclick="refreshResponseData()">Refresh workflow</button></div>
+   <div id="incidentCreateStatus" class="status" style="margin-top:10px">No responder incident created in this session.</div>
+   <div class="step-note" style="margin-top:8px"><b>Selangor demo scenario:</b> uses clearly labelled simulated emergency values for testing the responder → allocation → Telegram workflow. It is not live JPS data and must not be presented as an actual flood event.</div>
+  </div>
+  <div class="card">
+   <div class="label">Telegram integration</div><h3 class="h3">Public opt-in + responder group</h3>
+   <p class="small">Responder group configured for this project: <b>FloodGuard Emergency Response Team</b>. Public users opt in through <b>@FloodGuardAi_bot</b>; FloodGuard stores Telegram chat IDs and area preferences instead of collecting random public phone numbers.</p>
+   <div class="incident-actions"><a class="btn secondary telegram-link" href="https://t.me/FloodGuardAi_bot" target="_blank" rel="noopener">Open @FloodGuardAi_bot ↗</a><button class="btn secondary" onclick="copyResponderCommand()">Copy /registergroup</button></div>
+   <div id="telegramStatus" class="status" style="margin-top:10px">Checking backend / bot connection…</div>
+   <div id="subscriberStats" class="simple-grid" style="margin-top:10px"></div>
+  </div>
+ </div>
+ <div style="margin-top:18px"><div class="label">Responder incident queue</div><div id="incidentQueue"><div class="status">No incidents loaded.</div></div></div>
+ <div style="margin-top:18px"><div class="label">Notification & audit log</div><div id="auditLog" class="audit">No audit events loaded.</div></div>
+</div></section>
+
+<section id="s-method" class="section"><div class="wrap">
+ <div class="label">How FloodGuard Decides</div><h2 class="h2">From official reading to understandable recommendation</h2>
+ <div class="pipeline" style="margin-top:20px"><div class="pipe">JPS + local sensor + CCTV</div><div class="arrow">→</div><div class="pipe">Provenance & quality</div><div class="arrow">→</div><div class="pipe">Threshold / ML forecast</div><div class="arrow">→</div><div class="pipe">Responder verification</div><div class="arrow">→</div><div class="pipe">Team allocation</div><div class="arrow">→</div><div class="pipe">Approved public alert</div></div>
+ <div class="grid3" style="margin-top:18px">
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:7px">Stage</h3><p>Current water level is compared with that station's JPS Alert, Warning and Danger thresholds.</p></div>
+  <div class="card"><span class="tag derived">Derived</span><h3 class="h3" style="margin-top:7px">Rate of rise</h3><p><span class="mono">(WL₂ − WL₁) / Δt</span>. Only calculated from real distinct timestamps or explicit user inputs.</p></div>
+  <div class="card"><span class="tag ml">ML</span><h3 class="h3" style="margin-top:7px">OLS baseline</h3><p>Chronological 80/20 train/test split. After validation, the model is refitted on all usable historical pairs and predicts a new water level beyond the latest timestamp. Metrics: MAE, RMSE, R² and persistence-baseline RMSE.</p></div>
+ </div>
+ <div class="grid2" style="margin-top:14px">
+  <div class="card"><h3 class="h3">Validation rule</h3><ul class="list"><li><b>No random split:</b> future readings are never used to train earlier predictions.</li><li><b>Benchmark required:</b> regression is compared with “future level = current level”.</li><li><b>No fake confidence:</b> model quality is shown through held-out errors.</li><li><b>No synthetic training rows:</b> uploaded or bundled official historical observations only.</li></ul></div>
+  <div class="card"><h3 class="h3">What V3 intentionally does not claim</h3><ul class="list"><li>Not an official warning service.</li><li>No “safe route” claim without verified road-closure / elevation data.</li><li>No resource-allocation claim without verified shelters, assets and response constraints.</li><li>No stream-flow dashboard while the current general official stream-flow page returns no usable rows.</li></ul></div>
+ </div>
+</div></section>
+
+<section id="s-sources" class="section"><div class="wrap">
+ <div class="label">Data Provenance</div><h2 class="h2">Traceable sources, not mystery numbers</h2>
+ <div class="callout" style="margin-top:14px"><b>Water-level unit:</b> JPS officially labels the field <b>Water Level (m)</b>. FloodGuard preserves the official value and thresholds, but treats it as a station-referenced stage/gauge value rather than physical river depth. Because the public table does not state the datum for every station, FloodGuard does not relabel it as elevation above sea level.</div>
+ <div class="sourcegrid" style="margin-top:18px">
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:7px">JPS Public Infobanjir — Water Level</h3><p>Station observations and station-specific Normal / Alert / Warning / Danger thresholds.</p><div class="url">https://publicinfobanjir.water.gov.my/aras-air/data-paras-air/</div></div>
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:7px">JPS Public Infobanjir — Rainfall</h3><p>Rainfall-station readings and one-hour rainfall context.</p><div class="url">https://publicinfobanjir.water.gov.my/hujan/data-hujan/</div></div>
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:7px">JPS Real Time Status</h3><p>Nationwide state-level online/offline counts for rainfall and water-level stations. A dated fallback snapshot is bundled so Nationwide never becomes an empty page.</p><div class="url">https://publicinfobanjir.water.gov.my/real-time-status/?lang=en</div></div>
+  <div class="card"><span class="tag official">Official</span><h3 class="h3" style="margin-top:7px">JPS Trend / Historical Data</h3><p>Official trend interface supports water-level/rainfall history and CSV export for proper ML datasets.</p><div class="url">https://publicinfobanjir.water.gov.my/trend-hujan-aras-air/</div></div>
+  <div class="card"><span class="tag ml">Verified example</span><h3 class="h3" style="margin-top:7px">JPS Kuala Lumpur historical series</h3><p>FloodGuard includes a small real historical Sg. Klang series so the ML pipeline can always be demonstrated end-to-end, including a weak-model outcome.</p></div>
+  <div class="card"><span class="tag snapshot">Not shown as feature</span><h3 class="h3" style="margin-top:7px">Stream flow</h3><p>The current general JPS stream-flow page returned “No Data” during verification, so V3 removes the empty Flow module instead of pretending it works.</p></div>
+ </div>
+ <div id="sourceSession" class="status" style="margin-top:16px">No data retrieval attempted in this browser session.</div>
+</div></section>
+
+
+<section id="s-legend" class="section"><div class="wrap">
+ <div class="label">Legend & Units</div><h2 class="h2">What the abbreviations and numbers mean</h2>
+ <p class="lede">This legend is intentionally plain-language so users can interpret FloodGuard without engineering or hydrology background.</p>
+
+ <div class="grid2" style="margin-top:18px">
+  <div class="card"><h3 class="h3">Hydrology & JPS</h3><ul class="list">
+   <li><b>JPS</b> — Jabatan Pengairan dan Saliran Malaysia (Department of Irrigation and Drainage, DID).</li>
+   <li><b>Sg.</b> — Sungai / River.</li>
+   <li><b>Emp.</b> — Empangan / Dam.</li>
+   <li><b>WL</b> — Water Level parameter / station-ID suffix used by JPS.</li>
+   <li><b>RF</b> — Rainfall parameter / station-ID suffix used by JPS.</li>
+   <li><b>F1 / F2</b> — suffixes present in JPS station names. FloodGuard preserves them but does not assign a meaning because the public pages reviewed do not define the suffix clearly.</li>
+  </ul></div>
+
+  <div class="card"><h3 class="h3">Units</h3><ul class="list">
+   <li><b>m</b> — metres. For JPS water level, this is a station-referenced gauge/stage value; do not interpret it as river depth.</li>
+   <li><b>mm</b> — millimetres of rainfall. Example: 0.0 mm in 1 hour means the gauge recorded no rain in that one-hour period.</li>
+   <li><b>m/h</b> — metres per hour; used for rate of rise.</li>
+   <li><b>+15 / +30 / +60 min</b> — how far into the future the AI model is asked to predict water level.</li>
+  </ul></div>
+
+  <div class="card"><h3 class="h3">Flood stages</h3><ul class="list">
+   <li><b>Normal</b> — below Alert threshold.</li>
+   <li><b>Alert / Waspada</b> — river level has risen significantly above Normal.</li>
+   <li><b>Warning / Amaran</b> — river level is approaching flood level; prepare for evacuation if needed.</li>
+   <li><b>Danger / Bahaya</b> — river level has reached a level associated with considerable flooding; evacuation may be required.</li>
+  </ul></div>
+
+  <div class="card"><h3 class="h3">AI / validation</h3><ul class="list">
+   <li><b>AI</b> — Artificial Intelligence.</li>
+   <li><b>ML</b> — Machine Learning.</li>
+   <li><b>OLS</b> — Ordinary Least Squares linear regression; the current baseline prediction model.</li>
+   <li><b>MAE</b> — Mean Absolute Error; average absolute prediction error in metres.</li>
+   <li><b>RMSE</b> — Root Mean Square Error; prediction error metric that penalises larger misses more strongly.</li>
+   <li><b>R²</b> — coefficient of determination; indicates how much variation the model explains on held-out data.</li>
+   <li><b>CSV</b> — comma-separated values file used to import/export historical data and forecast reports.</li>
+  </ul></div>
+
+  <div class="card"><h3 class="h3">Data labels</h3><ul class="list">
+   <li><span class="tag official">Official</span> — retrieved from an official JPS source.</li>
+   <li><span class="tag snapshot">Snapshot</span> — dated official data bundled for demonstration; not live.</li>
+   <li><span class="tag derived">Derived</span> — calculated by FloodGuard from official/input data, e.g. distance to Danger or rate of rise.</li>
+   <li><span class="tag ml">ML</span> — output from the trained machine-learning baseline.</li>
+  </ul></div>
+
+  <div class="card"><h3 class="h3">Malaysia state codes used internally</h3><p class="small">SEL Selangor · WLH Kuala Lumpur · PTJ Putrajaya · PRK Perak · PLS Perlis · KDH Kedah · PNG Pulau Pinang · NSN Negeri Sembilan · MLK Melaka · JHR Johor · PHG Pahang · TRG Terengganu · KEL Kelantan · SRK Sarawak · SAB Sabah · WLP Labuan.</p></div>
+ </div>
+</div></section>
+
+<div class="footer">FloodGuard AI V4 · IEM IDEAS 2026 · Prototype decision-support system · Official Malaysian warnings remain authoritative</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const T={
+ normal:{label:"Normal",hex:"#3FA34D"},alert:{label:"Alert",hex:"#D9A404"},
+ warning:{label:"Warning",hex:"#E0762E"},danger:{label:"Danger",hex:"#D6392C"},unknown:{label:"Not loaded",hex:"#63768D"}
+};
+const STATES={
+ PLS:{name:"Perlis",lat:6.44,lng:100.20},KDH:{name:"Kedah",lat:5.95,lng:100.53},PNG:{name:"Pulau Pinang",lat:5.41,lng:100.32},
+ PRK:{name:"Perak",lat:4.75,lng:101.00},SEL:{name:"Selangor",lat:3.20,lng:101.45},WLH:{name:"Kuala Lumpur",lat:3.14,lng:101.69},
+ PTJ:{name:"Putrajaya",lat:2.93,lng:101.69},NSN:{name:"Negeri Sembilan",lat:2.73,lng:102.17},MLK:{name:"Melaka",lat:2.23,lng:102.25},
+ JHR:{name:"Johor",lat:2.02,lng:103.32},PHG:{name:"Pahang",lat:3.81,lng:102.42},TRG:{name:"Terengganu",lat:5.31,lng:103.13},
+ KEL:{name:"Kelantan",lat:5.35,lng:102.00},SRK:{name:"Sarawak",lat:2.80,lng:113.40},SAB:{name:"Sabah",lat:5.50,lng:117.00},
+ WLP:{name:"Labuan",lat:5.28,lng:115.24}
+};
+/* Official JPS Real Time Status snapshot. Explicitly dated; never labelled live. */
+const STATUS_FALLBACK={
+ PLS:{last:"10/08/2026 18:30:00",rain_on:25,rain_off:42,water_on:7,water_off:44},
+ KDH:{last:"10/08/2026 18:30:00",rain_on:89,rain_off:82,water_on:23,water_off:85},
+ PNG:{last:"10/08/2026 18:30:00",rain_on:48,rain_off:61,water_on:22,water_off:35},
+ PRK:{last:"10/08/2026 18:30:00",rain_on:42,rain_off:99,water_on:26,water_off:56},
+ SEL:{last:"10/08/2026 18:30:00",rain_on:241,rain_off:79,water_on:65,water_off:121},
+ WLH:{last:"10/08/2026 18:40:00",rain_on:67,rain_off:28,water_on:46,water_off:31},
+ PTJ:{last:"10/08/2026 18:30:00",rain_on:2,rain_off:0,water_on:0,water_off:0},
+ NSN:{last:"10/08/2026 18:30:00",rain_on:54,rain_off:90,water_on:19,water_off:38},
+ MLK:{last:"10/08/2026 18:30:00",rain_on:40,rain_off:14,water_on:25,water_off:12},
+ JHR:{last:"10/08/2026 18:30:00",rain_on:153,rain_off:190,water_on:78,water_off:117},
+ PHG:{last:"10/08/2026 18:30:00",rain_on:105,rain_off:128,water_on:57,water_off:72},
+ TRG:{last:"10/08/2026 18:35:00",rain_on:61,rain_off:55,water_on:34,water_off:36},
+ KEL:{last:"10/08/2026 18:30:00",rain_on:57,rain_off:25,water_on:32,water_off:16},
+ SRK:{last:"10/08/2026 18:30:00",rain_on:254,rain_off:30,water_on:112,water_off:41},
+ SAB:{last:"10/08/2026 18:30:00",rain_on:22,rain_off:62,water_on:5,water_off:48},
+ WLP:{last:"10/08/2026 18:30:00",rain_on:10,rain_off:0,water_on:5,water_off:0}
+};
+let coverage={},coverageMode="snapshot",loaded={},activeState="SEL",activeStation="",map,markers={},historical=[],model=null;
+
+const STATION_SNAPSHOT={
+ SEL:[
+  {state:"SEL",station_id:"3516424",station_name:"Sg. Selangor di Ampang Pecah",district:"Hulu Selangor",basin:"Sungai Selangor",last_updated:"25/08/2026 07:45",water_level:50.33,normal:50.10,alert:51.30,warning:51.60,danger:51.90,data_mode:"SNAPSHOT"},
+  {state:"SEL",station_id:"3416403",station_name:"Sg. Batang Kali di Batang Kali",district:"Hulu Selangor",basin:"Sungai Selangor",last_updated:"25/08/2026 08:00",water_level:32.20,normal:34.00,alert:35.20,warning:35.50,danger:35.80,data_mode:"SNAPSHOT"},
+  {state:"SEL",station_id:"3415401",station_name:"Sg. Selangor di Kg. Timah",district:"Hulu Selangor",basin:"Sungai Selangor",last_updated:"25/08/2026 08:00",water_level:17.44,normal:17.50,alert:18.80,warning:19.30,danger:19.80,data_mode:"SNAPSHOT"}
+ ],
+ PLS:[
+  {state:"PLS",station_id:"0010571WL",station_name:"Sg. Pelarit di Wang Kelian (F2)",district:"Padang Besar",basin:"Sungai Perlis",last_updated:"02/09/2026 09:45",water_level:105.59,normal:105.30,alert:105.80,warning:106.10,danger:106.40,data_mode:"SNAPSHOT"},
+  {state:"PLS",station_id:"0010651WL",station_name:"Sg. Perlis di Padang Katong (F2)",district:"Kangar",basin:"Sungai Perlis",last_updated:"02/09/2026 09:30",water_level:1.41,normal:2.50,alert:3.00,warning:3.40,danger:3.80,data_mode:"SNAPSHOT"}
+ ]
+};
+Object.values(STATION_SNAPSHOT).flat().forEach(r=>r.stage=stageOf(r));
+
+const RAIN_SNAPSHOT={
+ SEL:[
+  {state:"SEL",station_id:"0232371RF",station_name:"SMK SS 17 (F2)",district:"Petaling",last_updated:"27/07/2026 01:00:00",rain_1h:0.0,rain_since_midnight:0.0,daily_dates:["21/07","22/07","23/07","24/07","25/07","26/07"],daily_history:[0.0,0.0,0.0,3.5,0.5,18.5],data_mode:"SNAPSHOT"},
+  {state:"SEL",station_id:"0231651RF",station_name:"Ayer Hitam Puchong (F2)",district:"Petaling",last_updated:"27/07/2026 00:45:00",rain_1h:0.0,rain_since_midnight:0.0,daily_dates:["21/07","22/07","23/07","24/07","25/07","26/07"],daily_history:[0.0,9.0,4.0,43.5,0.0,28.0],data_mode:"SNAPSHOT"},
+  {state:"SEL",station_id:"0240571RF",station_name:"Genting Peres (F2)",district:"Hulu Langat",last_updated:"27/07/2026 00:45:00",rain_1h:0.0,rain_since_midnight:0.0,daily_dates:["21/07","22/07","23/07","24/07","25/07","26/07"],daily_history:[0.0,6.0,12.5,11.0,31.0,0.5],data_mode:"SNAPSHOT"},
+  {state:"SEL",station_id:"0240661RF",station_name:"Pekan Banting (F2)",district:"Kuala Langat",last_updated:"27/07/2026 00:15:00",rain_1h:0.0,rain_since_midnight:0.0,daily_dates:["21/07","22/07","23/07","24/07","25/07","26/07"],daily_history:[0.0,21.0,0.0,0.0,22.0,33.0],data_mode:"SNAPSHOT"}
+ ]
+};
+
+
+function show(id){
+ document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.getElementById("s-"+id).classList.add("active");
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.id===id));if(id==="nationwide"&&map)setTimeout(()=>map.invalidateSize(),80);if(id==="response")refreshResponseData();window.scrollTo(0,0)
+}
+function tick(){document.getElementById("clock").textContent=new Date().toTimeString().slice(0,8)}setInterval(tick,1000);tick()
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function fmt(v,d=2){return Number.isFinite(+v)?(+v).toFixed(d):"—"}
+function stageRank(x){return({unknown:-1,normal:0,alert:1,warning:2,danger:3})[x]??-1}
+function stageOf(r){let w=+r.water_level,a=+r.alert,b=+r.warning,d=+r.danger;if(![w,a,b,d].every(Number.isFinite)||w<=-9000)return"unknown";if(w>=d)return"danger";if(w>=b)return"warning";if(w>=a)return"alert";return"normal"}
+function prox(r){let n=+r.normal,d=+r.danger,w=+r.water_level;if(![n,d,w].every(Number.isFinite)||d<=n)return null;return Math.max(0,Math.min(1,(w-n)/(d-n)))}
+function rainCat(mm){mm=+mm;if(!Number.isFinite(mm))return"Unavailable";if(mm<=0)return"No rain";if(mm<=10)return"Light";if(mm<=30)return"Moderate";if(mm<=60)return"Heavy";return"Very Heavy"}
+function distanceInfo(threshold,current){
+ threshold=+threshold;current=+current;if(!Number.isFinite(threshold)||!Number.isFinite(current))return{value:null,text:"Unavailable"};
+ const d=threshold-current;
+ if(Math.abs(d)<0.0005)return{value:0,text:"Threshold reached"};
+ return d>0?{value:d,text:`${fmt(d)} m below threshold`}:{value:d,text:`${fmt(Math.abs(d))} m above threshold`};
+}
+function nextThresholdInfo(r){
+ const w=+r.water_level;
+ if(!Number.isFinite(w))return{name:"Unavailable",value:null,distance:null};
+ if(Number.isFinite(+r.alert)&&w<+r.alert)return{name:"Alert",value:+r.alert,distance:+r.alert-w};
+ if(Number.isFinite(+r.warning)&&w<+r.warning)return{name:"Warning",value:+r.warning,distance:+r.warning-w};
+ if(Number.isFinite(+r.danger)&&w<+r.danger)return{name:"Danger",value:+r.danger,distance:+r.danger-w};
+ return{name:"Danger exceeded",value:+r.danger,distance:+r.danger-w};
+}
+
+function officialWaterURL(c){return`https://publicinfobanjir.water.gov.my/aras-air/data-paras-air/?state=${c}&lang=en`}
+function officialRainURL(c){return`https://publicinfobanjir.water.gov.my/hujan/data-hujan/?state=${c}&lang=en`}
+
+function buildSelects(){
+ const opts=Object.entries(STATES).map(([c,s])=>`<option value="${c}" ${c==="SEL"?"selected":""}>${s.name}</option>`).join("");
+ document.getElementById("stateSelect").innerHTML=opts;document.getElementById("rainStateSelect").innerHTML=opts;
+ syncLinks("SEL")
+}
+function syncLinks(c){document.getElementById("officialWaterLink").href=officialWaterURL(c);document.getElementById("officialRainLink").href=officialRainURL(c)}
+function initMap(){
+ if(typeof L==="undefined"){document.getElementById("map").innerHTML='<div class="status" style="margin:15px">Leaflet could not load. State list still works.</div>';return}
+ map=L.map("map").setView([4.2,109.3],5);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap"}).addTo(map);
+ Object.entries(STATES).forEach(([c,s])=>{markers[c]=L.circleMarker([s.lat,s.lng],{radius:7,color:"#63768D",fillColor:"#63768D",fillOpacity:.85,weight:2}).addTo(map).on("click",()=>{document.getElementById("stateSelect").value=c;selectState(c)})})
+}
+function updateMarker(c){
+ if(!markers[c])return;let rows=loaded[c]?.water||[],highest="unknown";rows.forEach(r=>{if(stageRank(r.stage)>stageRank(highest))highest=r.stage});
+ let color=rows.length?T[highest].hex:(coverage[c]?.water_on>0?"#4C9BE0":"#63768D"),text=rows.length?`${STATES[c].name}: ${T[highest].label} (${rows.length} detailed stations)`:`${STATES[c].name}: ${coverage[c]?.water_on??"—"} water-level stations online (${coverageMode})`;
+ markers[c].setStyle({color,fillColor:color}).bindTooltip(text)
+}
+async function api(type,state=""){
+ const u=`/api/jps?type=${encodeURIComponent(type)}${state?`&state=${encodeURIComponent(state)}`:""}`;let r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`connector HTTP ${r.status}`);return await r.json()
+}
+async function loadNationwideStatus(){
+ let status=document.getElementById("nationStatus");
+ try{
+  let d=await api("status");if(!d.rows?.length)throw new Error("no state rows returned");
+  coverage={};d.rows.forEach(r=>{if(STATES[r.state])coverage[r.state]=r});coverageMode="live connector";
+  status.className="status good";status.innerHTML=`<strong>JPS nationwide status retrieved.</strong> ${Object.keys(coverage).length} state/territory rows loaded.`;
+  document.getElementById("modeBadge").textContent="NETWORK: JPS RETRIEVED";
+ }catch(e){
+  coverage=JSON.parse(JSON.stringify(STATUS_FALLBACK));coverageMode="official JPS snapshot 10 Aug 2026";
+  status.className="status warn";status.innerHTML=`<strong>Connector unavailable.</strong> Nationwide view remains functional using the bundled, explicitly dated JPS Real Time Status snapshot. Detailed station retrieval can still be retried per state.`;
+  document.getElementById("modeBadge").textContent="NETWORK: VERIFIED SNAPSHOT";
+ }
+ renderStateList();Object.keys(STATES).forEach(updateMarker);renderCoverage(activeState);document.getElementById("sourceSession").textContent=`Nationwide mode: ${coverageMode}.`
+}
+function renderStateList(){
+ document.getElementById("stateList").innerHTML=Object.entries(STATES).map(([c,s])=>{let x=coverage[c]||{},on=x.water_on??0,total=(x.water_on??0)+(x.water_off??0),ratio=total?on/total:0,color=ratio>=.65?"#3FA34D":ratio>=.35?"#D9A404":"#63768D";return`<div class="state-row" onclick="selectState('${c}')"><div class="dot" style="background:${color}"></div><div><div class="name">${s.name}</div><div class="meta">WL online ${x.water_on??"—"} · rain online ${x.rain_on??"—"} · ${esc(x.last||"")}</div></div><span class="chip" style="background:${color}22;color:${color}">${total?Math.round(ratio*100)+"% WL online":"—"}</span></div>`}).join("")
+}
+function selectState(c){
+ activeState=c;document.getElementById("stateSelect").value=c;document.getElementById("rainStateSelect").value=c;syncLinks(c);renderCoverage(c);
+ if(map&&markers[c])map.setView(markers[c].getLatLng(),6);loadState(c)
+}
+function renderCoverage(c){
+ let x=coverage[c]||{},wTot=(x.water_on??0)+(x.water_off??0),rTot=(x.rain_on??0)+(x.rain_off??0);
+ document.getElementById("selectedCoverage").innerHTML=`<div class="cov"><div class="cl">${STATES[c].name}</div><div class="cv">${x.water_on??"—"}</div><div class="cs">water-level online / ${wTot||"—"} listed</div></div><div class="cov"><div class="cl">Rainfall online</div><div class="cv">${x.rain_on??"—"}</div><div class="cs">/ ${rTot||"—"} listed</div></div><div class="cov"><div class="cl">Status updated</div><div class="cv" style="font-size:12px">${esc(x.last||"—")}</div><div class="cs">${coverageMode}</div></div><div class="cov"><div class="cl">Detailed data</div><div class="cv">${loaded[c]?.water?.length||0}</div><div class="cs">station rows loaded this session</div></div>`;
+ let rx=document.getElementById("rainCoverage");if(rx&&document.getElementById("rainStateSelect").value===c)rx.innerHTML=document.getElementById("selectedCoverage").innerHTML
+}
+async function loadSelectedState(){return loadState(document.getElementById("stateSelect").value)}
+async function loadState(c){
+ activeState=c;syncLinks(c);document.getElementById("rainStateSelect").value=c;renderCoverage(c);
+ let btn=document.getElementById("loadStateBtn"),st=document.getElementById("nationStatus");btn.disabled=true;btn.textContent="Loading…";st.className="status";st.textContent=`Retrieving ${STATES[c].name} station details from JPS… Current water level and station-specific Alert / Warning / Danger thresholds will appear below if detailed rows are returned.`;
+ let d={water:[],rain:[],errors:[],mode:"unavailable"};
+ try{
+  let results=await Promise.allSettled([api("water",c),api("rain",c)]);
+  if(results[0].status==="fulfilled")d.water=results[0].value.rows||[];
+  if(results[1].status==="fulfilled")d.rain=results[1].value.rows||[];
+  if(!d.water.length)throw new Error("no detailed water rows returned");
+  d.water.forEach(r=>{r.state=c;r.stage=stageOf(r);r.data_mode="OFFICIAL"});d.rain.forEach(r=>{r.state=c;r.data_mode="OFFICIAL"});d.mode="official";
+  st.className="status good";st.innerHTML=`<strong>Detailed JPS data retrieved.</strong> ${d.water.length} water-level station row(s) and ${d.rain.length} rainfall row(s) loaded for ${STATES[c].name}.`;
+ }catch(e){
+  if(STATION_SNAPSHOT[c]){
+   d.water=JSON.parse(JSON.stringify(STATION_SNAPSHOT[c]));d.rain=[];d.mode="snapshot";
+   st.className="status warn";st.innerHTML=`<strong>Detailed connector unavailable.</strong> Showing a small verified JPS station snapshot for ${STATES[c].name}. Nationwide network counts remain available for every state. <a href="${officialWaterURL(c)}" target="_blank">Open official live page ↗</a>`;
+  }else{
+   d.mode="coverage-only";
+   st.className="status warn";st.innerHTML=`<strong>State coverage is available, but detailed rows were not retrieved.</strong> JPS snapshot shows ${coverage[c]?.water_on??"—"} water-level stations online for ${STATES[c].name}. <a href="${officialWaterURL(c)}" target="_blank">Open official station page ↗</a>`;
+  }
+ }finally{btn.disabled=false;btn.textContent="Load selected state"}
+ loaded[c]=d;renderLoadedState(c);updateMarker(c);renderCoverage(c);renderStationOptions();renderRain(c);
+ document.getElementById("sourceSession").textContent=`${STATES[c].name}: ${d.mode}; detailed water ${d.water.length}; rainfall ${d.rain.length}.`;
+}
+function renderLoadedState(c){
+ let rows=loaded[c]?.water||[];syncStationCatalog(rows);document.getElementById("stationCount").textContent=rows.length;
+ let highest="unknown";rows.forEach(r=>{if(stageRank(r.stage)>stageRank(highest))highest=r.stage});let tt=T[highest];
+ document.getElementById("highestStage").textContent=rows.length?tt.label:"—";document.getElementById("highestStage").style.color=tt.hex;
+ document.getElementById("highestSub").textContent=rows.length?`Highest stage among ${rows.length} detailed rows.`:"No detailed rows loaded; network availability still shown above.";
+ const near=rows.length?rows.filter(r=>(prox(r)??-1)>=.8).length:null;
+ document.getElementById("nearDanger").textContent=rows.length?near:"—";
+ const hero=document.getElementById("stateHero");
+ if(hero){
+   hero.innerHTML=rows.length
+     ? `<div class="hero-main">${STATES[c].name}: highest loaded stage is <span style="color:${tt.hex}">${tt.label}</span>.</div><div class="hero-sub">${rows.length} detailed station reading(s) loaded. ${near} station(s) are close to their own Danger threshold. Scroll down for exact readings and thresholds.</div>`
+     : `<div class="hero-main">${STATES[c].name}: detailed river-stage readings are not loaded.</div><div class="hero-sub">FloodGuard can still show JPS monitoring-network availability, but it will not label the state Normal / Alert / Warning / Danger without station-level readings.</div>`;
+ }
+ renderNationStationList(c,rows);
+}
+function renderNationStationList(c,rows){
+ const box=document.getElementById("nationStationList"); if(!box)return;
+ if(!rows.length){
+   const online=coverage[c]?.water_on??"—";
+   box.className="station-empty";
+   box.innerHTML=`No detailed station rows were retrieved for <b>${esc(STATES[c]?.name||c)}</b>. JPS network status still reports <b>${online}</b> water-level station(s) online. <a href="${officialWaterURL(c)}" target="_blank" rel="noopener">Open the official JPS station page ↗</a>`;
+   return;
+ }
+ const sorted=[...rows].sort((a,b)=>stageRank(b.stage)-stageRank(a.stage)||(prox(b)??0)-(prox(a)??0));
+ box.className="";
+ box.innerHTML=`<table class="station-table">
+   <thead><tr>
+     <th>Station</th><th>District</th><th>JPS level (m)</th><th>Alert</th><th>Warning</th><th>Danger</th><th>Stage</th><th>Updated</th>
+   </tr></thead>
+   <tbody>${sorted.map(r=>{
+     const t=T[r.stage]||T.unknown;
+     return `<tr onclick="selectStation('${esc(r.station_id)}');show('station')">
+       <td><b>${esc(r.station_name)}</b><div class="meta">${r.data_mode==="OFFICIAL"?"Official JPS retrieval":"Verified snapshot"}</div></td>
+       <td>${esc(r.district||"—")}</td>
+       <td class="mono">${fmt(r.water_level)} m</td>
+       <td class="mono">${fmt(r.alert)} m</td>
+       <td class="mono">${fmt(r.warning)} m</td>
+       <td class="mono">${fmt(r.danger)} m</td>
+       <td><span class="chip" style="background:${t.hex}22;color:${t.hex}">${t.label}</span></td>
+       <td>${esc(r.last_updated||"—")}</td>
+     </tr>`;
+   }).join("")}</tbody>
+ </table>`;
+}
+function renderStationOptions(){
+ let rows=Object.values(loaded).flatMap(x=>x.water||[]),s=document.getElementById("stationSelect");
+ if(!rows.length){s.innerHTML='<option value="">No detailed station loaded</option>';return}
+ s.innerHTML=rows.map(r=>`<option value="${esc(r.station_id)}">${esc(r.station_name)} — ${STATES[r.state]?.name||r.state}</option>`).join("");if(!activeStation||!rows.some(r=>r.station_id===activeStation))activeStation=rows[0].station_id;s.value=activeStation;selectStation(activeStation)
+}
+function findStation(id){return Object.values(loaded).flatMap(x=>x.water||[]).find(r=>r.station_id===id)}
+function stationDecision(r){
+ if(r.stage==="danger")return"Official Danger threshold reached/exceeded. Prioritise official warnings and evacuation readiness.";
+ if(r.stage==="warning")return"Official Warning threshold reached/exceeded. Intensify verification and response readiness.";
+ if(r.stage==="alert")return"Official Alert threshold reached/exceeded. Increase monitoring and local preparedness.";
+ return"Official stage is Normal. Continue routine monitoring and watch for rapid changes."
+}
+function selectStation(id){
+ activeStation=id;let r=findStation(id),el=document.getElementById("stationDetail");if(!r){el.className="status";el.textContent="Station not found in loaded data.";return}
+ let t=T[r.stage],p=prox(r),pos=p===null?0:Math.round(p*100);
+ const dAlert=distanceInfo(r.alert,r.water_level),dWarning=distanceInfo(r.warning,r.water_level),dDanger=distanceInfo(r.danger,r.water_level),next=nextThresholdInfo(r);
+ const dangerFormula=(Number.isFinite(+r.danger)&&Number.isFinite(+r.water_level))
+   ? `${fmt(r.danger)} − ${fmt(r.water_level)} = ${fmt(+r.danger-(+r.water_level))} m`
+   : "Unavailable";
+ const hero=document.getElementById("stationHero");
+ if(hero){
+   const nextText=next.name==="Danger exceeded"
+     ? `The Danger threshold has already been exceeded by ${fmt(Math.abs(next.distance))} m.`
+     : `${fmt(Math.abs(next.distance))} m to ${next.name}.`;
+   hero.innerHTML=`<div class="hero-main">${esc(r.station_name)} is currently <span style="color:${t.hex}">${t.label}</span>.</div><div class="hero-sub">${nextText} Current JPS station level: ${fmt(r.water_level)} m. Danger threshold: ${fmt(r.danger)} m.</div>`;
+ }
+ el.className="card";el.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="tag ${r.data_mode==="OFFICIAL"?"official":"snapshot"}">${r.data_mode}</span><h2 class="h2" style="margin-top:8px">${esc(r.station_name)}</h2><div class="small">${esc(r.district)} · ${esc(r.basin||"")} · station timestamp ${esc(r.last_updated)}</div></div><span class="chip" style="font-size:12px;background:${t.hex}22;color:${t.hex}">${t.label}</span></div>
+
+ <div class="grid4" style="margin-top:14px">
+  <div class="kpi"><div class="k">JPS station level</div><div class="v mono">${fmt(r.water_level)} m</div><div class="s">station gauge/stage reading; not river depth</div></div>
+  <div class="kpi"><div class="k">Next threshold</div><div class="v">${next.name}</div><div class="s">${Number.isFinite(next.distance)?fmt(Math.abs(next.distance))+" m away":"—"}</div></div>
+  <div class="kpi"><div class="k">Current stage</div><div class="v" style="color:${t.hex}">${t.label}</div><div class="s">from JPS station thresholds</div></div>
+  <div class="kpi"><div class="k">Distance to Danger</div><div class="v mono">${Number.isFinite(dDanger.value)?fmt(Math.abs(dDanger.value))+" m":"—"}</div><div class="s">${dDanger.text}</div></div>
+ </div>
+
+ <div class="grid3" style="margin-top:12px">
+  <div class="card soft"><div class="label">Distance to Alert</div><div class="big" style="font-size:20px">${Number.isFinite(dAlert.value)?fmt(Math.abs(dAlert.value))+" m":"—"}</div><p>${dAlert.text}</p></div>
+  <div class="card soft"><div class="label">Distance to Warning</div><div class="big" style="font-size:20px">${Number.isFinite(dWarning.value)?fmt(Math.abs(dWarning.value))+" m":"—"}</div><p>${dWarning.text}</p></div>
+  <div class="card soft"><div class="label">Distance to Danger</div><div class="big" style="font-size:20px">${Number.isFinite(dDanger.value)?fmt(Math.abs(dDanger.value))+" m":"—"}</div><p>${dDanger.text}</p></div>
+ </div>
+
+ <div class="threshold"><div class="marker" style="left:${pos}%"></div></div><div class="thlabels"><span>Normal ${fmt(r.normal)}</span><span>Alert ${fmt(r.alert)}</span><span>Warning ${fmt(r.warning)}</span><span>Danger ${fmt(r.danger)}</span></div>
+
+ <div class="grid2" style="margin-top:14px">
+  <div class="card soft"><div class="label">How the calculation works</div>
+   <p style="font-size:12.5px;line-height:1.6">FloodGuard subtracts the current JPS station level from each threshold at that same station.</p>
+   <div class="formula" style="margin-top:9px">Distance to Danger = Danger threshold − Current station level<br>${dangerFormula}</div>
+   <p class="small" style="margin-top:8px">A positive result means the station is still below the threshold. A negative result means the threshold has already been exceeded.</p>
+  </div>
+  <div class="card soft"><div class="label">What this means now</div><p style="font-size:13.5px;line-height:1.6">${stationDecision(r)}</p><ul class="list" style="margin-top:8px"><li><b>Threshold proximity:</b> ${p===null?"Unavailable":Math.round(p*100)+"% of Normal→Danger band"} <span class="tag derived">Derived</span></li><li><b>Data source:</b> ${r.data_mode==="OFFICIAL"?"server-side JPS retrieval":"verified dated JPS snapshot"}.</li></ul><p class="small" style="margin-top:9px">Official JPS / agency warnings remain authoritative.</p></div>
+ </div>`;
+}
+function useVerifiedStationExample(){
+ let c="SEL";if(!loaded[c])loaded[c]={water:JSON.parse(JSON.stringify(STATION_SNAPSHOT[c])),rain:[],mode:"snapshot"};loaded[c].water.forEach(r=>r.stage=stageOf(r));activeState=c;renderLoadedState(c);renderStationOptions();activeStation=loaded[c].water[0].station_id;selectStation(activeStation);show("station")
+}
+
+/* Rainfall */
+async function loadRainState(){
+ let c=document.getElementById("rainStateSelect").value;activeState=c;syncLinks(c);renderCoverage(c);
+ let s=document.getElementById("rainStatus");s.className="status";s.textContent=`Retrieving detailed 1-hour rainfall readings for ${STATES[c].name}…`;
+ try{
+  let d=await api("rain",c),rows=d.rows||[];if(!rows.length)throw new Error("no detailed rainfall rows returned");
+  if(!loaded[c])loaded[c]={water:[],rain:[],mode:"official"};loaded[c].rain=rows.map(r=>({...r,state:c,data_mode:"OFFICIAL"}));
+  s.className="status good";s.innerHTML=`<strong>${rows.length} detailed JPS rainfall station row(s) retrieved.</strong> The readings below show recent 1-hour rainfall, not river flood stage.`;
+ }catch(e){
+  if(c==="SEL" && RAIN_SNAPSHOT.SEL?.length){
+   if(!loaded[c])loaded[c]={water:[],rain:[],mode:"snapshot"};loaded[c].rain=JSON.parse(JSON.stringify(RAIN_SNAPSHOT.SEL));
+   s.className="status warn";s.innerHTML=`<strong>Live detailed rainfall retrieval unavailable.</strong> Showing a clearly labelled verified historical Selangor JPS rainfall snapshot so the module remains demonstrable. <a href="${officialRainURL(c)}" target="_blank">Open official rainfall page ↗</a>`;
+  }else{
+   if(!loaded[c])loaded[c]={water:[],rain:[],mode:"coverage-only"};loaded[c].rain=[];
+   s.className="status warn";s.innerHTML=`Detailed rainfall rows were not retrieved. JPS network coverage still reports <strong>${coverage[c]?.rain_on??"—"}</strong> rainfall station(s) online for ${STATES[c].name}. This tells us monitoring availability, but not the rainfall amount. <a href="${officialRainURL(c)}" target="_blank">Open official rainfall page ↗</a>`;
+  }
+ }
+ renderRain(c)
+}
+function loadVerifiedRainExample(){
+ const c="SEL";document.getElementById("rainStateSelect").value=c;activeState=c;syncLinks(c);renderCoverage(c);
+ if(!loaded[c])loaded[c]={water:[],rain:[],mode:"snapshot"};loaded[c].rain=JSON.parse(JSON.stringify(RAIN_SNAPSHOT.SEL));
+ document.getElementById("rainStatus").className="status warn";
+ document.getElementById("rainStatus").innerHTML="<strong>Verified historical rainfall example loaded.</strong> These are dated JPS readings for demonstrating the rainfall workflow; they are not live.";
+ renderRain(c);show("rainfall")
+}
+function renderRain(c){
+ document.getElementById("rainStateSelect").value=c;renderCoverage(c);let rows=loaded[c]?.rain||[];
+ document.getElementById("rainExportBtn").disabled=!rows.length;
+ const valid=rows.map(r=>+r.rain_1h).filter(Number.isFinite);
+ const max=valid.length?Math.max(...valid):null,avg=valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:null,cat=Number.isFinite(max)?rainCat(max):"Unavailable";
+ document.getElementById("rainSummary").innerHTML=`
+   <div class="kpi"><div class="k">Detailed stations</div><div class="v">${rows.length||0}</div><div class="s">rows actually loaded</div></div>
+   <div class="kpi"><div class="k">Highest 1-hour rainfall</div><div class="v mono">${Number.isFinite(max)?fmt(max,1)+" mm":"—"}</div><div class="s">maximum among loaded stations</div></div>
+   <div class="kpi"><div class="k">Average 1-hour rainfall</div><div class="v mono">${Number.isFinite(avg)?fmt(avg,1)+" mm":"—"}</div><div class="s">mean across loaded stations</div></div>
+   <div class="kpi"><div class="k">Highest rainfall category</div><div class="v">${cat}</div><div class="s">JPS one-hour intensity band</div></div>`;
+ const meaning=document.getElementById("rainMeaning");
+ if(rows.length){
+   const interpretation=cat==="Very Heavy"?"Very heavy rainfall is present in the loaded area. This can rapidly increase catchment runoff, so river level and rate of rise deserve closer attention."
+   :cat==="Heavy"?"Heavy rainfall is present. FloodGuard treats this as hydrological context and checks whether river levels are also rising."
+   :cat==="Moderate"?"Moderate rainfall is present. It adds catchment input but does not by itself mean a river has reached flood stage."
+   :cat==="Light"?"Only light rainfall is present in the loaded readings. River-level thresholds remain the primary flood-stage reference."
+   :"The current 1-hour reading is 0.0 mm at the loaded stations. That means no rainfall was recorded in that one-hour window — not that the catchment has been dry for days. Recent daily rainfall can still matter, and river levels may stay elevated after earlier or upstream rain.";
+   meaning.innerHTML=`<b>What this means:</b> ${interpretation}<br><span class="small">Rainfall enters the AI model only when the historical training dataset contains usable rainfall values aligned with the station/time series.</span>`;
+ }else{
+   meaning.innerHTML=`<b>No detailed rainfall values loaded.</b> Network coverage only tells us how many gauges are online; it cannot tell us whether rainfall is light, heavy or very heavy.`;
+ }
+ document.getElementById("rainGrid").innerHTML=rows.length?[...rows].sort((a,b)=>(+b.rain_1h||0)-(+a.rain_1h||0)).slice(0,16).map(r=>{
+   const hist=Array.isArray(r.daily_history)&&r.daily_history.length
+     ? `<div class="rm" style="margin-top:7px"><b>Recent daily rainfall:</b><br>${r.daily_history.map((v,i)=>`${esc(r.daily_dates?.[i]||"")} ${fmt(v,1)} mm`).join(" · ")}</div>`
+     : "";
+   const headline=(+r.rain_1h===0)?"No rain recorded in the last hour":`${rainCat(r.rain_1h)} rainfall in the last hour`;
+   return `<div class="rain"><span class="tag ${r.data_mode==="OFFICIAL"?"official":"snapshot"}">${r.data_mode==="OFFICIAL"?"Official JPS data":"Historical JPS snapshot"}</span><div class="rn" style="margin-top:7px">${esc(r.station_name)}</div><div class="rain-headline">${headline}</div><div class="rv mono">${fmt(r.rain_1h,1)} mm</div><div class="rain-zero">${esc(r.district)} · ${esc(r.last_updated||"")}</div>${hist}</div>`
+  }).join(""):"";
+}
+function exportRainCSV(){
+ const c=document.getElementById("rainStateSelect").value,rows=loaded[c]?.rain||[];if(!rows.length)return;
+ const cols=["state","station_id","station_name","district","last_updated","rain_1h","data_mode"];
+ const csv=[cols.join(","),...rows.map(r=>cols.map(k=>csvCell(r[k])).join(","))].join("\\n");download(`floodguard_${c}_rainfall.csv`,csv)
+}
+function csvCell(v){let s=String(v??"");return /[",\\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
+
+/* Historical + ML */
+function parseCSV(text){
+ let rows=[],row=[],cell="",q=false;for(let i=0;i<text.length;i++){let ch=text[i],nx=text[i+1];if(q){if(ch==='"'&&nx==='"'){cell+='"';i++}else if(ch==='"')q=false;else cell+=ch}else{if(ch==='"')q=true;else if(ch===','){row.push(cell);cell=""}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell=""}else if(ch!=='\r')cell+=ch}}if(cell||row.length){row.push(cell);rows.push(row)}if(rows.length<2)return[];
+ let h=rows[0].map(x=>x.trim().toLowerCase());return rows.slice(1).filter(r=>r.some(x=>String(x).trim())).map(r=>Object.fromEntries(h.map((x,i)=>[x,(r[i]??"").trim()])))
+}
+function normHist(rows){return rows.map(r=>({station_id:r.station_id||r.id,station_name:r.station_name||r.station||"",state:r.state||"",timestamp:r.timestamp||r.datetime,water_level:+(r.water_level??r.water??r.level),rainfall:r.rainfall===""||r.rainfall==null?null:+r.rainfall,alert:r.alert===""||r.alert==null?null:+r.alert,warning:r.warning===""||r.warning==null?null:+r.warning,danger:r.danger===""||r.danger==null?null:+r.danger})).filter(r=>r.station_id&&r.timestamp&&Number.isFinite(r.water_level)&&!isNaN(new Date(r.timestamp).getTime()))}
+function handleCSV(e){let f=e.target.files?.[0];if(!f)return;let rd=new FileReader();rd.onload=()=>setHistorical(normHist(parseCSV(rd.result)),`Imported ${f.name}`);rd.readAsText(f)}
+function setHistorical(rows,label){
+ historical=rows;let ids=[...new Set(rows.map(r=>r.station_id))],sel=document.getElementById("mlStation");
+ sel.innerHTML=ids.map(id=>{let x=rows.find(r=>r.station_id===id);return`<option value="${esc(id)}">${esc(x.station_name||id)}</option>`}).join("");
+ document.getElementById("csvStatus").className="status "+(rows.length?"good":"bad");
+ document.getElementById("csvStatus").innerHTML=rows.length?`<strong>${label}.</strong> ${rows.length} valid observation(s), ${ids.length} station(s). No synthetic rows added.`:"No valid rows found.";
+ document.getElementById("modelResult").innerHTML='<div class="small">Dataset ready. Choose a forecast horizon, then click Predict & validate.</div>';
+ document.getElementById("forecastDownloadBtn").disabled=true;model=null;renderHistoryPreview();
+}
+function renderHistoryPreview(){
+ const box=document.getElementById("historyPreview");if(!historical.length){box.style.display="none";box.innerHTML="";return}
+ const rows=[...historical].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).slice(-8);
+ box.style.display="block";box.innerHTML=`<table><thead><tr><th>Timestamp</th><th>Water level</th><th>Rainfall</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${new Date(r.timestamp).toLocaleString()}</td><td class="mono">${fmt(r.water_level,2)} m</td><td class="mono">${Number.isFinite(r.rainfall)?fmt(r.rainfall,1)+" mm":"—"}</td></tr>`).join("")}</tbody></table>`;
+}
+function loadVerifiedExample(){
+ const vals=[24.10,24.15,24.05,23.91,23.91,23.94,23.95,23.90,24.01,25.17,25.86,26.00,25.72,25.15,24.65,24.41,24.22,24.05,23.99,23.88,23.81,23.75,23.74,23.71];
+ const start=new Date("2026-09-10T06:00:00+08:00");let rows=vals.map((v,i)=>({station_id:"0231121WL",station_name:"Sg. Klang di Leboh Pasar (F2)",state:"WLH",timestamp:new Date(start.getTime()+i*3600000).toISOString(),water_level:v,rainfall:null,alert:28.77,warning:29.77,danger:30.77}));
+ setHistorical(rows,"Verified JPS-KL historical example (24 hourly readings, 10–11 Sep 2026)");document.getElementById("horizon").value="60";show("forecast");setTimeout(trainModel,80)
+}
+function downloadTemplate(){let x="station_id,station_name,state,timestamp,water_level,rainfall,alert,warning,danger\nEX001,Example Station,SEL,2026-09-01T08:00:00+08:00,1.20,,1.50,1.80,2.00\nEX001,Example Station,SEL,2026-09-01T08:15:00+08:00,1.24,,1.50,1.80,2.00";download("floodguard_historical_template.csv",x)}
+function download(name,text){let b=new Blob([text],{type:"text/csv"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
+function transpose(A){return A[0].map((_,i)=>A.map(r=>r[i]))}function matMul(A,B){return A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)))}
+function invert(A){let n=A.length,M=A.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>i===j?1:0)]);for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(M[r][i])>Math.abs(M[p][i]))p=r;if(Math.abs(M[p][i])<1e-12)return null;[M[i],M[p]]=[M[p],M[i]];let d=M[i][i];for(let j=0;j<2*n;j++)M[i][j]/=d;for(let r=0;r<n;r++)if(r!==i){let f=M[r][i];for(let j=0;j<2*n;j++)M[r][j]-=f*M[i][j]}}return M.map(r=>r.slice(n))}
+function fitOLS(X,y){let Xt=transpose(X),A=matMul(Xt,X);for(let i=0;i<A.length;i++)A[i][i]+=1e-8;let inv=invert(A);if(!inv)return null;return matMul(matMul(inv,Xt),y.map(v=>[v])).map(r=>r[0])}
+function dot(a,b){return a.reduce((s,v,i)=>s+v*b[i],0)}
+function samplesFor(rows,h){
+ rows=[...rows].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+ const rainCount=rows.filter(r=>Number.isFinite(r.rainfall)).length;
+ const rainOK=rainCount>=Math.max(10,rows.length*.8) && Number.isFinite(rows[rows.length-1]?.rainfall);
+ let out=[];
+ for(let i=1;i<rows.length-1;i++){
+  let cur=rows[i],pre=rows[i-1],dt=(new Date(cur.timestamp)-new Date(pre.timestamp))/3600000;if(dt<=0)continue;
+  let rr=(cur.water_level-pre.water_level)/dt,target=null;
+  for(let j=i+1;j<rows.length;j++){
+   let dm=(new Date(rows[j].timestamp)-new Date(cur.timestamp))/60000;
+   if(dm>=h*.8&&dm<=h*1.25){target=rows[j];break}
+   if(dm>h*1.25)break
+  }
+  if(!target)continue;
+  let x=[1,cur.water_level,rr];if(rainOK){if(!Number.isFinite(cur.rainfall))continue;x.push(cur.rainfall)}
+  out.push({x,y:target.water_level,current:cur.water_level,target,at:cur,rate:rr})
+ }
+ return{samples:out,rainOK,features:rainOK?["current water level","rate of rise","rainfall"]:["current water level","rate of rise"]}
+}
+function metrics(y,p){
+ let n=y.length,mae=y.reduce((s,v,i)=>s+Math.abs(v-p[i]),0)/n,rmse=Math.sqrt(y.reduce((s,v,i)=>s+(v-p[i])**2,0)/n),mean=y.reduce((a,b)=>a+b,0)/n,sst=y.reduce((s,v)=>s+(v-mean)**2,0),ssr=y.reduce((s,v,i)=>s+(v-p[i])**2,0);
+ return{mae,rmse,r2:sst?1-ssr/sst:null}
+}
+function trainModel(){
+ let id=document.getElementById("mlStation").value,h=+document.getElementById("horizon").value,rows=historical.filter(r=>r.station_id===id).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)),out=document.getElementById("modelResult");
+ if(rows.length<3){out.innerHTML='<div class="status bad">Not enough historical observations for this station.</div>';return}
+ const built=samplesFor(rows,h),ss=built.samples;
+ if(ss.length<10){out.innerHTML=`<div class="status bad"><strong>Not enough forecast examples.</strong> ${ss.length} usable historical pair(s) were found for +${h} minutes. Use a longer history or a forecast horizon that matches the observation interval.</div>`;return}
+ let cut=Math.floor(ss.length*.8),tr=ss.slice(0,cut),te=ss.slice(cut);
+ if(te.length<2){out.innerHTML='<div class="status bad">Not enough later observations for validation.</div>';return}
+ let betaTrain=fitOLS(tr.map(s=>s.x),tr.map(s=>s.y));if(!betaTrain){out.innerHTML='<div class="status bad">Regression could not be fitted.</div>';return}
+ let pred=te.map(s=>dot(s.x,betaTrain)),actual=te.map(s=>s.y),m=metrics(actual,pred),naive=te.map(s=>s.current),bm=metrics(actual,naive);
+
+ let betaAll=fitOLS(ss.map(s=>s.x),ss.map(s=>s.y));if(!betaAll){out.innerHTML='<div class="status bad">Final regression could not be fitted.</div>';return}
+ const prev=rows[rows.length-2],latest=rows[rows.length-1],dt=(new Date(latest.timestamp)-new Date(prev.timestamp))/3600000;
+ if(dt<=0){out.innerHTML='<div class="status bad">Latest timestamps are not in chronological order.</div>';return}
+ const recentRate=(latest.water_level-prev.water_level)/dt;
+ const xNow=[1,latest.water_level,recentRate];if(built.rainOK)xNow.push(latest.rainfall);
+ const next=dot(xNow,betaAll),forecastTime=new Date(new Date(latest.timestamp).getTime()+h*60000);
+ const st=stageOf({water_level:next,alert:latest.alert,warning:latest.warning,danger:latest.danger});
+ const currentStage=stageOf({water_level:latest.water_level,alert:latest.alert,warning:latest.warning,danger:latest.danger});
+ const dDanger=Number.isFinite(latest.danger)?latest.danger-next:null;
+ const beats=m.rmse<bm.rmse;
+ const rainText=built.rainOK?`${fmt(latest.rainfall,1)} mm included as an AI input`:"not used — this historical dataset does not contain sufficient aligned rainfall";
+ const equationParts=[`${betaAll[0].toFixed(4)}`,`${betaAll[1].toFixed(4)}×${fmt(latest.water_level,3)}`,`${betaAll[2].toFixed(4)}×${fmt(recentRate,3)}`];
+ if(built.rainOK)equationParts.push(`${betaAll[3].toFixed(4)}×${fmt(latest.rainfall,3)}`);
+ const equation=`Predicted future WL = ${equationParts.join(" + ")} = ${fmt(next,3)} m`;
+
+ model={station_id:id,station_name:latest.station_name,horizon:h,latest_timestamp:latest.timestamp,forecast_timestamp:forecastTime.toISOString(),latest_level:latest.water_level,previous_level:prev.water_level,rate_of_rise:recentRate,rainfall_used:built.rainOK?latest.rainfall:null,predicted_level:next,current_stage:currentStage,predicted_stage:st,danger:latest.danger,distance_to_danger:dDanger,mae:m.mae,rmse:m.rmse,r2:m.r2,persistence_rmse:bm.rmse,train_n:tr.length,test_n:te.length,total_pairs:ss.length,features:built.features,beats_persistence:beats,equation};
+ document.getElementById("forecastDownloadBtn").disabled=false;
+
+ out.innerHTML=`
+ <div class="hero-summary">
+   <div class="hero-main">${esc(latest.station_name||id)} is predicted to be <span style="color:${T[st]?.hex||"#E9F1F8"}">${T[st]?.label||"Unknown"}</span> in ${h} minutes.</div>
+   <div class="hero-sub">Latest observation: ${fmt(latest.water_level,3)} m at ${new Date(latest.timestamp).toLocaleString()}. Forecast: ${fmt(next,3)} m at ${forecastTime.toLocaleString()}.</div>
+ </div>
+ <div class="simple-grid" style="margin-top:12px">
+   <div class="simple-card"><div class="title">Current station level</div><div class="value mono">${fmt(latest.water_level,3)} m</div><div class="desc">${T[currentStage]?.label||"—"} now</div></div>
+   <div class="simple-card"><div class="title">Forecast station level</div><div class="value mono">${fmt(next,3)} m</div><div class="desc">at +${h} min</div></div>
+   <div class="simple-card"><div class="title">Danger threshold</div><div class="value mono">${Number.isFinite(+latest.danger)?fmt(latest.danger,3)+" m":"—"}</div><div class="desc">official station threshold</div></div>
+   <div class="simple-card"><div class="title">Forecast distance to Danger</div><div class="value mono">${Number.isFinite(dDanger)?fmt(Math.abs(dDanger),3)+" m":"—"}</div><div class="desc">${Number.isFinite(dDanger)?(dDanger>=0?"below Danger":"above Danger"):"threshold unavailable"}</div></div>
+ </div>
+ <div class="meaning" style="margin-top:12px"><b>What this means:</b> FloodGuard estimates the station will move from <b>${fmt(latest.water_level,3)} m</b> to about <b>${fmt(next,3)} m</b> over the next ${h} minutes. That forecast is compared with the station's official thresholds, giving an expected stage of <b>${T[st]?.label||"unavailable"}</b>.</div>
+ <details class="tech">
+  <summary>Show technical validation & calculation</summary>
+  <div class="tech-body">
+   <div class="status ${beats?"good":"warn"}"><strong>Model check:</strong> ${beats?"better than a simple “no-change” forecast on this holdout.":"not better than a simple “no-change” forecast on this holdout."}</div>
+   <div class="grid4" style="margin-top:12px">
+    <div class="kpi"><div class="k">Previous level</div><div class="v mono">${fmt(prev.water_level,3)} m</div><div class="s">${new Date(prev.timestamp).toLocaleString()}</div></div>
+    <div class="kpi"><div class="k">Recent rate of rise</div><div class="v mono">${fmt(recentRate,3)} m/h</div><div class="s">from last 2 observations</div></div>
+    <div class="kpi"><div class="k">Rainfall input</div><div class="v">${built.rainOK?fmt(latest.rainfall,1)+" mm":"Not used"}</div><div class="s">${rainText}</div></div>
+    <div class="kpi"><div class="k">Forecast stage</div><div class="v" style="color:${T[st]?.hex||"#E9F1F8"}">${T[st]?.label||"—"}</div><div class="s">from official thresholds</div></div>
+   </div>
+   <div class="formula" style="margin-top:10px">${equation}</div>
+   <div class="metrics" style="margin-top:12px">
+    <div class="metric"><div class="l">Historical pairs</div><div class="m">${ss.length}</div></div>
+    <div class="metric"><div class="l">MAE</div><div class="m">${fmt(m.mae,3)} m</div></div>
+    <div class="metric"><div class="l">RMSE</div><div class="m">${fmt(m.rmse,3)} m</div></div>
+    <div class="metric"><div class="l">No-change RMSE</div><div class="m">${fmt(bm.rmse,3)} m</div></div>
+   </div>
+   <div class="small" style="margin-top:9px">Chronological validation: ${tr.length} training pair(s) / ${te.length} test pair(s) · R² ${m.r2===null?"—":fmt(m.r2,3)} · features: ${built.features.join(", ")}.</div>
+  </div>
+ </details>`;
+}
+function downloadForecastReport(){
+ if(!model)return;
+ const cols=["station_id","station_name","latest_timestamp","latest_level_m","forecast_timestamp","horizon_min","rate_of_rise_m_per_h","rainfall_used_mm","predicted_level_m","current_stage","predicted_stage","danger_threshold_m","predicted_distance_to_danger_m","mae_m","rmse_m","persistence_rmse_m","r2","train_pairs","test_pairs","features"];
+ const r=model,vals=[r.station_id,r.station_name,r.latest_timestamp,r.latest_level,r.forecast_timestamp,r.horizon,r.rate_of_rise,r.rainfall_used??"",r.predicted_level,r.current_stage,r.predicted_stage,r.danger??"",r.distance_to_danger??"",r.mae,r.rmse,r.persistence_rmse,r.r2??"",r.train_n,r.test_n,r.features.join(" + ")];
+ download("floodguard_forecast_report.csv",cols.join(",")+"\\n"+vals.map(csvCell).join(","))
+}
+function quickProjection(){
+ let a=+document.getElementById("qPrev").value,b=+document.getElementById("qCurr").value,mins=+document.getElementById("qMin").value,d=+document.getElementById("qDanger").value,el=document.getElementById("quickResult");
+ if(![a,b,mins,d].every(Number.isFinite)||mins<=0){el.className="status bad";el.textContent="Enter valid numbers and minutes > 0.";return}
+ let rr=(b-a)/(mins/60),p60=b+rr,time=rr>0?(d-b)/rr*60:null;el.className="status good";el.innerHTML=`<span class="tag derived">Derived</span> <strong>Rate of rise:</strong> ${fmt(rr,3)} m/h · <strong>linear +60 min:</strong> ${fmt(p60,3)} m · <strong>screening time to Danger:</strong> ${time!==null&&time>=0?Math.round(time)+" min":"not projected while trend is non-rising / already exceeded"}.`
+}
+
+
+/* ================= FloodGuard V4 response + Telegram workflow ================= */
+async function syncStationCatalog(rows){
+ if(!Array.isArray(rows)||!rows.length)return;
+ try{await fgApi('/api/catalog/stations',{method:'POST',body:JSON.stringify({stations:rows.map(r=>({state:r.state,station_id:r.station_id,station_name:r.station_name}))})})}catch(_){}
+}
+
+let incidents=[], responseMeta={};
+async function fgApi(path,opts={}){
+ const r=await fetch(path,{cache:"no-store",headers:{"Content-Type":"application/json",...(opts.headers||{})},...opts});
+ let d={};try{d=await r.json()}catch(_){d={error:`HTTP ${r.status}`}};
+ if(!r.ok)throw new Error(d.error||d.message||`HTTP ${r.status}`);return d
+}
+function copyResponderCommand(){navigator.clipboard?.writeText('/registergroup');const e=document.getElementById('telegramStatus');e.className='status good';e.innerHTML='<strong>Copied.</strong> After the backend is running, send <span class="mono">/registergroup</span> inside FloodGuard Emergency Response Team.'}
+function currentIncidentPayload(){
+ const r=findStation(activeStation);
+ if(!r)throw new Error('Select/load a station first.');
+ const matchingModel=model&&model.station_id===r.station_id?model:null;
+ return {
+   state:r.state,station_id:r.station_id,station_name:r.station_name,district:r.district||'',basin:r.basin||'',
+   current_level:+r.water_level,current_stage:r.stage,alert:+r.alert,warning:+r.warning,danger:+r.danger,
+   forecast_level:matchingModel?matchingModel.predicted_level:null,forecast_stage:matchingModel?matchingModel.predicted_stage:null,
+   forecast_horizon_min:matchingModel?matchingModel.horizon:null,forecast_rmse:matchingModel?matchingModel.rmse:null,
+   cctv_status:document.getElementById('incidentCctv').value,sensor_status:document.getElementById('incidentSensor').value,
+   detection_note:document.getElementById('incidentNote').value.trim(),source_mode:r.data_mode||'UNKNOWN'
+ }
+}
+async function createIncidentFromCurrent(){
+ const st=document.getElementById('incidentCreateStatus');
+ try{const payload=currentIncidentPayload();st.className='status';st.textContent='Creating responder incident…';
+   const d=await fgApi('/api/incidents',{method:'POST',body:JSON.stringify(payload)});
+   st.className='status good';st.innerHTML=`<strong>Incident ${esc(d.incident.id)} created.</strong> Responder group notification: ${d.telegram_notified?'sent':'not sent (bot/group not connected yet)'}.`;
+   await refreshResponseData();
+ }catch(e){st.className='status bad';st.innerHTML=`<strong>Could not create incident.</strong> ${esc(e.message)}`}
+}
+async function loadSelangorDemoIncident(){
+ const st=document.getElementById('incidentCreateStatus');
+ const payload={
+   state:'SEL',station_id:'DEMO-SEL-AMPANG-PECAH',station_name:'Sg. Selangor di Ampang Pecah — DEMO',district:'Hulu Selangor',basin:'Sungai Selangor',
+   current_level:51.55,current_stage:'alert',alert:51.30,warning:51.60,danger:51.90,
+   forecast_level:52.05,forecast_stage:'danger',forecast_horizon_min:60,forecast_rmse:0.12,
+   cctv_status:'visual_flooding',sensor_status:'confirming_rise',
+   detection_note:'SIMULATION ONLY: rising station level + 60-minute Danger forecast; local sensor confirms rise and CCTV shows visible flooding. Created for FloodGuard responder/Telegram workflow testing.',
+   source_mode:'SIMULATION'
+ };
+ try{
+   st.className='status';st.textContent='Creating Selangor demo incident…';
+   const d=await fgApi('/api/incidents',{method:'POST',body:JSON.stringify(payload)});
+   st.className='status warn';st.innerHTML=`<strong>Selangor DEMO incident ${esc(d.incident.id)} created.</strong> This is simulated data for workflow testing only. Responder group notification: ${d.telegram_notified?'sent':'not sent (bot/group not connected yet)'}.`;
+   await refreshResponseData();
+ }catch(e){st.className='status bad';st.innerHTML=`<strong>Could not create demo incident.</strong> ${esc(e.message)}`}
+}
+function incidentStageColor(x){return T[x]?.hex||'#63768D'}
+function flowState(i){
+ if(i.public_alert_sent)return 6;if(i.approved_at)return 5;if(i.response_ready)return 4;if(i.team_allocation?.trim())return 3;if(i.verified)return 2;return 1
+}
+function incidentTemplate(i){
+ const step=flowState(i), stage=i.forecast_stage||i.current_stage||'unknown', color=incidentStageColor(stage);
+ const forecast=Number.isFinite(+i.forecast_level)?`${fmt(i.forecast_level,3)} m / ${T[i.forecast_stage]?.label||i.forecast_stage}`:'No ML forecast attached';
+ return `<div class="incident-card">
+  <div class="incident-top"><div><span class="pill">${esc(i.id)}</span><h3 class="h3" style="margin-top:8px">${esc(i.station_name)}</h3><div class="small">${esc(i.district||i.state)} · created ${new Date(i.created_at).toLocaleString()}</div></div><span class="chip" style="background:${color}22;color:${color}">${esc(T[stage]?.label||stage)}</span></div>
+  <div class="simple-grid" style="margin-top:12px"><div class="simple-card"><div class="title">Current</div><div class="value mono">${fmt(i.current_level,3)} m</div><div class="desc">${esc(T[i.current_stage]?.label||i.current_stage)}</div></div><div class="simple-card"><div class="title">Forecast</div><div class="value">${esc(forecast)}</div><div class="desc">${i.forecast_horizon_min?`+${i.forecast_horizon_min} min`:''}</div></div><div class="simple-card"><div class="title">CCTV</div><div class="value" style="font-size:14px">${esc(i.cctv_status||'pending')}</div><div class="desc">visual verification layer</div></div><div class="simple-card"><div class="title">Local sensor</div><div class="value" style="font-size:14px">${esc(i.sensor_status||'—')}</div><div class="desc">secondary field evidence</div></div></div>
+  <div class="workflow" style="grid-template-columns:repeat(6,1fr);margin-top:12px">${['Detected','Forecast reviewed','Responder verified','Team allocated / ready','Approved','Public notified'].map((x,n)=>`<div class="wf ${step>n+1?'done':step===n+1?'active':''}">${n+1} · ${x}</div>`).join('')}</div>
+  <div class="grid2"><div><label class="small">Responder verification note</label><textarea id="verify-${i.id}" class="field textarea" ${i.verified?'disabled':''}>${esc(i.verification_note||'')}</textarea><label class="checkrow"><input id="verified-${i.id}" type="checkbox" ${i.verified?'checked disabled':''}> Possible flood verified by responder</label></div><div><label class="small">Team / resource allocation</label><textarea id="alloc-${i.id}" class="field textarea" ${i.public_alert_sent?'disabled':''} placeholder="Example: Team A river/CCTV verification; Team B Zone 1 evacuation support; Team C traffic/logistics; 2 vehicles; 1 boat.">${esc(i.team_allocation||'')}</textarea><label class="checkrow"><input id="ready-${i.id}" type="checkbox" ${i.response_ready?'checked':''} ${i.public_alert_sent?'disabled':''}> Team/resources coordinated and response ready</label></div></div>
+  <div style="margin-top:10px"><label class="small">Public alert message</label><textarea id="msg-${i.id}" class="field textarea" ${i.public_alert_sent?'disabled':''}>${esc(i.public_message||defaultPublicMessage(i))}</textarea></div>
+  <div class="incident-actions"><button class="btn secondary" onclick="saveIncident('${i.id}')" ${i.public_alert_sent?'disabled':''}>Save verification & allocation</button><button class="btn ok-btn" onclick="approveIncident('${i.id}')" ${i.public_alert_sent?'disabled':''}>Approve & send public alert</button></div>
+  <div class="step-note" style="margin-top:8px">Public send is blocked unless responder verification is checked, allocation is non-empty, and response readiness is checked. Subscribers are filtered by state/station and minimum alert level.</div>
+ </div>`
+}
+function defaultPublicMessage(i){
+ const stage=T[i.forecast_stage]?.label||T[i.current_stage]?.label||'elevated';const h=i.forecast_horizon_min?` within approximately ${i.forecast_horizon_min} minutes`:'';
+ return `FLOODGUARD ALERT: ${i.station_name} has been verified for possible flood conditions. FloodGuard indicates ${stage} conditions${h}. Response teams have been coordinated. Please monitor official JPS and emergency authority instructions.`
+}
+async function saveIncident(id){
+ try{const body={verified:document.getElementById(`verified-${id}`).checked,verification_note:document.getElementById(`verify-${id}`).value.trim(),team_allocation:document.getElementById(`alloc-${id}`).value.trim(),response_ready:document.getElementById(`ready-${id}`).checked,public_message:document.getElementById(`msg-${id}`).value.trim()};await fgApi(`/api/incidents/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify(body)});await refreshResponseData()}catch(e){alert(e.message)}
+}
+async function approveIncident(id){
+ try{await saveIncident(id);const d=await fgApi(`/api/incidents/${encodeURIComponent(id)}/approve`,{method:'POST',body:JSON.stringify({})});alert(`Approved. Telegram sent: ${d.sent_count}; failed: ${d.failed_count}; matched subscribers: ${d.matched_count}.`);await refreshResponseData()}catch(e){alert(`Alert not sent: ${e.message}`)}
+}
+async function refreshResponseData(){
+ const ts=document.getElementById('telegramStatus');if(!ts)return;
+ try{
+   const [health,inc,subs,audit]=await Promise.all([fgApi('/api/health'),fgApi('/api/incidents'),fgApi('/api/subscribers/stats'),fgApi('/api/audit')]);
+   responseMeta=health;incidents=inc.incidents||[];
+   ts.className='status '+(health.telegram?.token_configured?'good':'warn');
+   ts.innerHTML=`<strong>Backend online.</strong> Bot token: ${health.telegram?.token_configured?'configured':'not configured'} · responder group: ${health.telegram?.responder_group_registered?esc(health.telegram.group_title||'registered'):'not registered'} · polling: ${health.telegram?.polling?'running':'off'}.`;
+   document.getElementById('subscriberStats').innerHTML=`<div class="simple-card"><div class="title">Subscribers</div><div class="value">${subs.total||0}</div><div class="desc">active Telegram opt-ins</div></div><div class="simple-card"><div class="title">Areas</div><div class="value">${subs.areas||0}</div><div class="desc">state/station selections</div></div><div class="simple-card"><div class="title">Responder group</div><div class="value" style="font-size:13px">${health.telegram?.responder_group_registered?'Ready':'Pending'}</div><div class="desc">/registergroup</div></div><div class="simple-card"><div class="title">Public sends</div><div class="value">${subs.public_alerts_sent||0}</div><div class="desc">successful deliveries logged</div></div>`;
+   document.getElementById('incidentQueue').innerHTML=incidents.length?incidents.map(incidentTemplate).join(''):'<div class="status">No incidents yet.</div>';
+   document.getElementById('auditLog').textContent=(audit.events||[]).slice().reverse().map(x=>`${new Date(x.at).toLocaleString()}  ${x.type}  ${x.message||''}`).join('\n')||'No audit events yet.';
+ }catch(e){ts.className='status warn';ts.innerHTML=`<strong>V4 backend not connected yet.</strong> Run <span class="mono">node server.js</span> from the V4 package, then refresh. ${esc(e.message)}`}
+}
+
+function init(){buildSelects();initMap();loadNationwideStatus();refreshResponseData();document.getElementById("rainStateSelect").addEventListener("change",e=>{syncLinks(e.target.value);renderCoverage(e.target.value)});document.getElementById("stateSelect").addEventListener("change",e=>{activeState=e.target.value;document.getElementById("rainStateSelect").value=e.target.value;syncLinks(e.target.value);renderCoverage(e.target.value)});quickProjection()}
+init()
+</script>
+</body>
+</html>
